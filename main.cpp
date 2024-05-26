@@ -14,25 +14,33 @@ void usage() {
 }
 
 void packet_handler(const struct pcap_pkthdr *pkthdr, const u_char *packet) {
-    struct ieee80211_header *wifi_header;
-    struct beacon_frame *beacon;
+    struct dot11_radiotap_header* rt_hdr;
     struct ssid_parameter *ssid;
 
     // 먼저 MAC 헤더의 위치를 찾습니다.
-    wifi_header = (struct ieee80211_header*) packet;
+    rt_hdr = (struct dot11_radiotap_header*) packet;
 
-    // 비콘 프레임인지 확인합니다.
-    if ((wifi_header->type & 0xfc) == 0x80) { // 관리 프레임 중 비콘 프레임 타입 체크
-        // 비콘 프레임 정보를 가져옵니다.
-        beacon = (struct beacon_frame*)(packet + sizeof(struct ieee80211_header));
+    uint16_t len = htons(rt_hdr->it_len);
+    std::memset(rt_hdr, 0x00, len);
+    rt_hdr->it_len = htons(len);
 
-        // SSID 정보를 가져옵니다.
-        ssid = (struct ssid_parameter*)(packet + sizeof(struct ieee80211_header) + sizeof(struct beacon_frame));
+    struct dot11_beacon_frame_header *bf_hdr = (struct dot11_beacon_frame_header*)(packet + len);
 
-        printf("SSID: %.*s\n", ssid->length, ssid->ssid); // SSID 길이만큼 출력
-        printf("Beacon Interval: %d\n", beacon->beacon_interval);
-        printf("Capability Info: %d\n", beacon->capability_info);
-    }
+    if(bf_hdr->type != 0x80) return;
+
+    Mac transmitter;
+    transmitter = Mac(bf_hdr->transmitter);
+
+
+    if(transmitter != ap_mac) return;
+    std::cout << "transmitter_mac 주소: " << static_cast<std::string>(transmitter) << std::endl;
+
+    // SSID 정보를 가져옵니다.
+    ssid = (struct ssid_parameter*)(bf_hdr + sizeof(struct dot11_beacon_frame_header));
+    printf("element id : %d", ssid->element_id);
+    printf("length : %d", ssid->length);
+
+
 }
 
 int main(int argc, char* argv[])

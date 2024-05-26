@@ -17,8 +17,17 @@
 #include <arpa/inet.h>
 
 #pragma pack(push, 1)
+
+// Radiotap 헤더 구조체
+struct dot11_radiotap_header {
+    uint8_t it_version;     // Radiotap 버전
+    uint8_t it_pad;         // 패딩 (항상 0)
+    uint16_t it_len;        // 전체 헤더 길이
+    uint32_t it_present;    // 사용된 필드를 나타내는 비트 마스크
+};
+
 // IEEE 802.11 MAC 헤더 구조체
-struct ieee80211_header {
+struct dot11_beacon_frame_header {
     uint8_t type;
     uint8_t flags;
     uint16_t duration;
@@ -28,12 +37,6 @@ struct ieee80211_header {
     uint16_t sequence_control;
 };
 
-// 비콘 프레임 특정 정보 구조체
-struct beacon_frame {
-    uint64_t timestamp;
-    uint16_t beacon_interval;
-    uint16_t capability_info;
-};
 
 // SSID 정보를 파싱하기 위한 구조체
 struct ssid_parameter {
